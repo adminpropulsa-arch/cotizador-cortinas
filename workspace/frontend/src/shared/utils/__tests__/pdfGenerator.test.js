@@ -11,6 +11,7 @@ vi.mock("jspdf", () => {
       constructor() {
         this.save = mockSave
         this.text = vi.fn()
+        this.splitTextToSize = vi.fn((text) => [text])
         this.rect = vi.fn()
         this.circle = vi.fn()
         this.line = vi.fn()
@@ -65,7 +66,7 @@ describe("pdfGenerator", () => {
     }
 
     expect(() => generatePDF(mockData)).not.toThrow()
-    expect(mockSave).toHaveBeenCalledWith("Presupuesto_Empresa_Constructora_SRL.pdf")
+    expect(mockSave).toHaveBeenCalledWith("Presupuesto_Empresa_Constructora_SRL_Interno.pdf")
   })
 
   it("soporta tanto formato plano de propiedades como objeto details anidado sin fallar", () => {
@@ -105,6 +106,6 @@ describe("pdfGenerator", () => {
     }
 
     expect(() => generatePDF(mockDataConDetails)).not.toThrow()
-    expect(mockSave).toHaveBeenCalledWith("Presupuesto_Cliente_Test.pdf")
+    expect(mockSave).toHaveBeenCalledWith("Presupuesto_Cliente_Test_Interno.pdf")
   })
 })

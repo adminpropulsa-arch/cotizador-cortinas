@@ -1,35 +1,21 @@
 import { useState } from "react"
 import useCrud from "../hooks/useCrud"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
+import CreateElementDialog from "./CreateElementDialog"
 import { Button } from "@/components/ui/button"
 import EditElementModal from "./EditElementModal"
 
 export default function CajonCrudTable({ canEdit = true }) {
   const { items: cajones, createItem, updateItem, deleteItem } = useCrud("cajones")
-  const [newItem, setNewItem] = useState({ code: "", name: "", unit: "UN", heightAdjustment: 0.18, price: 0 })
   const [editTarget, setEditTarget] = useState(null)
-
-  const handleAdd = async () => {
-    if (!newItem.code || !newItem.name) return
-    await createItem(newItem)
-    setNewItem({ code: "", name: "", unit: "UN", heightAdjustment: 0.18, price: 0 })
-  }
 
   const handleDelete = (code) => deleteItem(code)
 
   return (
     <div className="flex flex-col gap-4 border border-zinc-800 p-4 rounded-lg bg-zinc-950/60 backdrop-blur-md">
       <h3 className="text-lg font-semibold text-zinc-100">Cajones de Persiana (Vuelos)</h3>
-      {canEdit && (
-        <div className="grid grid-cols-5 gap-2">
-          <Input placeholder="Código" value={newItem.code} onChange={(e) => setNewItem({ ...newItem, code: e.target.value })} className="bg-zinc-900 border-zinc-800 text-zinc-200" />
-          <Input placeholder="Nombre" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} className="bg-zinc-900 border-zinc-800 text-zinc-200" />
-          <Input placeholder="Alto Cajón/Vuelo (m)" type="number" step="0.001" value={newItem.heightAdjustment} onChange={(e) => setNewItem({ ...newItem, heightAdjustment: parseFloat(e.target.value) || 0 })} className="bg-zinc-900 border-zinc-800 text-zinc-200" />
-          <Input placeholder="Precio/UN" type="number" step="0.01" value={newItem.price} onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) || 0 })} className="bg-zinc-900 border-zinc-800 text-zinc-200" />
-          <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-500 text-white">Agregar</Button>
-        </div>
-      )}
+      {canEdit && <CreateElementDialog collection="cajones" items={cajones} onCreate={createItem} />}
+
       <div className="rounded-md border border-zinc-800 overflow-hidden">
         <Table>
           <TableHeader className="bg-zinc-900/50 border-zinc-800">

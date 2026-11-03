@@ -83,8 +83,8 @@ describe("EstimatorSummary Component", () => {
     const saveButton = screen.getByRole("button", { name: /Guardar Presupuesto/i })
     expect(saveButton).toBeDisabled()
 
-    const exportButton = screen.getByRole("button", { name: /Exportar PDF/i })
-    expect(exportButton).toBeDisabled()
+    expect(screen.getByRole("button", { name: "PDF interno" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "PDF cliente" })).toBeDisabled()
   })
 
   it("permite guardar el presupuesto cuando se ingresa el cliente y no está bloqueado", () => {

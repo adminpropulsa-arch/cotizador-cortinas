@@ -1,7 +1,7 @@
 import { useBudget } from "@/shared/providers/BudgetContext"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { generatePDF } from "@/shared/utils/pdfGenerator"
+import PdfButtons from "./PdfButtons"
 
 export default function HistoryList() {
   const { history, deleteBudget } = useBudget()
@@ -46,13 +46,7 @@ export default function HistoryList() {
                   <TableCell className="text-blue-400 font-bold font-mono text-sm">${b.grandTotal?.toFixed(2)} USD</TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
-                      <Button
-                        size="sm"
-                        onClick={() => generatePDF(b)}
-                        className="border border-zinc-700/80 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:border-blue-400 hover:text-white transition-colors"
-                      >
-                        📄 PDF
-                      </Button>
+                      <PdfButtons budget={b} />
                       <Button
                         size="sm"
                         variant="destructive"
