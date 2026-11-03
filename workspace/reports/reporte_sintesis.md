@@ -83,3 +83,10 @@ La publicación de GitHub Pages sigue en la versión anterior: esta solicitud mo
 ## Pasos siguientes
 
 Revisar los cambios locales y, cuando corresponda publicar, actualizar la compilación de Pages. Las restricciones de roles en la base de datos deben validarse por separado antes de usar datos sensibles.
+
+## Corrección posterior: contraste de botones PDF
+
+- `PdfButtons.jsx`: fondo zinc oscuro y texto claro explícitos, con estados hover y tema oscuro consistentes. Se aplica al resumen y al historial.
+- Pruebas de PdfButtons y EstimatorSummary: 4 aprobadas.
+- Build de producción con base `/cotizador-cortinas/`: aprobado.
+- Playwright: contraste de texto 16.12:1 sin clase global dark, sin errores de ejecución; ambos PDF continúan descargando correctamente.
