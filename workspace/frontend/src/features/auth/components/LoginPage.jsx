@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import useLoginForm from "../hooks/useLoginForm"
 
 export default function LoginPage({ onAuthenticated }) {
-  const { isRegistering, email, password, formError, isSubmitting, title, setEmail, setPassword, handleSubmit, toggleMode } = useLoginForm(onAuthenticated)
+  const { email, password, formError, isSubmitting, title, setEmail, setPassword, handleSubmit } = useLoginForm(onAuthenticated)
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 py-10 text-zinc-50">
@@ -32,11 +32,8 @@ export default function LoginPage({ onAuthenticated }) {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-zinc-400">
-          {isRegistering ? "¿Ya tenés cuenta?" : "¿No tenés cuenta?"}
-          <Button className="ml-1 h-auto p-0 text-blue-400 hover:bg-transparent hover:text-blue-300" onClick={toggleMode} type="button" variant="link">
-            {isRegistering ? "Iniciar Sesión" : "Crear una cuenta"}
-          </Button>
+        <p className="mt-6 text-center text-xs leading-relaxed text-zinc-400">
+          Si tenés algún problema para autenticarte, comunicate con <strong className="text-zinc-200">Grupo Gonzalez</strong> para consultas.
         </p>
       </section>
     </main>

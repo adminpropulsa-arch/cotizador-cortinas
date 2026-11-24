@@ -7,6 +7,7 @@ it.each([
   ["auth/wrong-password", "La contraseña no es correcta."],
   ["auth/email-already-in-use", "Ese correo ya está registrado."],
   ["auth/weak-password", "La contraseña debe tener al menos 6 caracteres."],
+  ["auth/user-disabled", "Tu cuenta está deshabilitada. Comunicate con Grupo Gonzalez para consultas."],
 ])("traduce %s", (code, message) => {
   expect(getAuthErrorMessage({ code })).toBe(message)
 })

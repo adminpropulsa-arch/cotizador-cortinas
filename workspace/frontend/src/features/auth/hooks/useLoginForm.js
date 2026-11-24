@@ -3,13 +3,12 @@ import { useAuth } from "@/shared/providers/AuthContext"
 import getAuthErrorMessage from "../utils/getAuthErrorMessage"
 
 export default function useLoginForm(onAuthenticated) {
-  const { login, register } = useAuth()
-  const [isRegistering, setIsRegistering] = useState(false)
+  const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [formError, setFormError] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const title = isRegistering ? "Crear Cuenta" : "Iniciar Sesión"
+  const title = "Iniciar Sesión"
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -23,7 +22,7 @@ export default function useLoginForm(onAuthenticated) {
     setIsSubmitting(true)
 
     try {
-      await (isRegistering ? register : login)(email.trim(), password)
+      await login(email.trim(), password)
       onAuthenticated()
     } catch (error) {
       setFormError(getAuthErrorMessage(error))
@@ -32,10 +31,5 @@ export default function useLoginForm(onAuthenticated) {
     }
   }
 
-  function toggleMode() {
-    setIsRegistering((current) => !current)
-    setFormError(null)
-  }
-
-  return { isRegistering, email, password, formError, isSubmitting, title, setEmail, setPassword, handleSubmit, toggleMode }
+  return { email, password, formError, isSubmitting, title, setEmail, setPassword, handleSubmit }
 }

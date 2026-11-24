@@ -1,11 +1,12 @@
 import { useCallback, useState } from "react"
 import { useAuth } from "@/shared/providers/AuthContext"
 import LoginPage from "@/features/auth/components/LoginPage"
+import UnauthorizedScreen from "@/features/auth/components/UnauthorizedScreen"
 import SplashScreen from "@/shared/components/SplashScreen"
 import AuthenticatedApp from "@/shared/components/AuthenticatedApp"
 
 export default function App() {
-  const { loading, logout, user } = useAuth()
+  const { isAuthorized, isBlocked, loading, logout, user } = useAuth()
   const [showSplash, setShowSplash] = useState(false)
 
   const handleAuthenticated = useCallback(() => setShowSplash(true), [])
@@ -25,6 +26,10 @@ export default function App() {
 
   if (showSplash) {
     return <SplashScreen onFinish={handleSplashComplete} />
+  }
+
+  if (!isAuthorized) {
+    return <UnauthorizedScreen isBlocked={isBlocked} onLogout={logout} user={user} />
   }
 
   return <AuthenticatedApp onLogout={logout} user={user} />

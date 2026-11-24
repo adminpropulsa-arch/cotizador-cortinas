@@ -6,6 +6,8 @@ const authMock = vi.hoisted(() => ({
   isMaster: false,
 }))
 
+vi.mock("@/lib/firebase", () => ({ auth: {}, db: {} }))
+
 vi.mock("@/shared/providers/AuthContext", () => ({
   useAuth: () => ({ isMaster: authMock.isMaster }),
 }))

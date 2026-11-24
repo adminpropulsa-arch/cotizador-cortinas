@@ -6,21 +6,71 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function normalizedEmail() {
+      return request.auth.token.email != null ? request.auth.token.email.lower() : '';
+    }
+
+    function hasUidProfile() {
+      return isSignedIn() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function hasEmailProfile() {
+      return isSignedIn()
+        && normalizedEmail() != ''
+        && exists(/databases/$(database)/documents/usuarios/$(normalizedEmail()));
+    }
+
+    function currentUserData() {
+      return hasUidProfile()
+        ? get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data
+        : get(/databases/$(database)/documents/usuarios/$(normalizedEmail())).data;
+    }
+
+    function hasActiveProfile() {
+      return (hasUidProfile() || hasEmailProfile())
+        && currentUserData().get('blocked', false) != true
+        && currentUserData().get('role', '') in ['master', 'empleado'];
+    }
+
+    function isMaster() {
+      return hasActiveProfile() && currentUserData().get('role', '') == 'master';
+    }
+
+    match /usuarios/{userId} {
+      allow get: if isMaster()
+        || (isSignedIn() && (userId == request.auth.uid || userId == normalizedEmail()));
+      allow list: if isMaster();
+      allow create, update, delete: if isMaster();
+    }
+
+    match /budget_history/{budgetId} {
+      allow read, write: if hasActiveProfile();
+    }
+
     match /{collectionName}/{documentId} {
-      allow read, write: if isSignedIn() && collectionName in [
+      allow read: if hasActiveProfile() && collectionName in [
         'lamas',
         'ejes',
         'guias',
         'cajones',
         'motores',
         'accesorios',
-        'margins',
-        'budget_history'
+        'margins'
+      ];
+      allow write: if isMaster() && collectionName in [
+        'lamas',
+        'ejes',
+        'guias',
+        'cajones',
+        'motores',
+        'accesorios',
+        'margins'
       ];
     }
 
     match /app_config/initial_data {
-      allow read, write: if isSignedIn();
+      allow read: if hasActiveProfile();
+      allow write: if isMaster();
     }
   }
 }

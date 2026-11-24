@@ -5,7 +5,6 @@ import LoginPage from "../LoginPage"
 
 const authMocks = vi.hoisted(() => ({
   login: vi.fn(),
-  register: vi.fn(),
 }))
 
 vi.mock("@/shared/providers/AuthContext", () => ({
@@ -19,26 +18,18 @@ function renderLoginPage() {
 beforeEach(() => {
   vi.clearAllMocks()
   authMocks.login.mockResolvedValue({})
-  authMocks.register.mockResolvedValue({})
 })
 
-it("muestra el formulario de inicio con campos obligatorios", () => {
+it("muestra únicamente el formulario de inicio de sesión y el mensaje de contacto con Grupo Gonzalez", () => {
   renderLoginPage()
 
   expect(screen.getByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument()
   expect(screen.getByLabelText("Correo electrónico")).toBeRequired()
   expect(screen.getByLabelText("Contraseña")).toBeRequired()
   expect(screen.getByRole("button", { name: "Iniciar Sesión" })).toBeInTheDocument()
-})
-
-it("alterna entre inicio de sesión y creación de cuenta", async () => {
-  const user = userEvent.setup()
-  renderLoginPage()
-
-  await user.click(screen.getByRole("button", { name: "Crear una cuenta" }))
-
-  expect(screen.getByRole("heading", { name: "Crear Cuenta" })).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Crear Cuenta" })).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: /crear una cuenta|crear cuenta|registr/i })).not.toBeInTheDocument()
+  expect(screen.getByText(/comunicate con/i)).toBeInTheDocument()
+  expect(screen.getByText(/Grupo Gonzalez/i)).toBeInTheDocument()
 })
 
 it("no envía credenciales cuando faltan campos obligatorios", async () => {
@@ -55,7 +46,7 @@ it("traduce errores de credenciales de Firebase", async () => {
   authMocks.login.mockRejectedValueOnce({ code: "auth/invalid-credential" })
   renderLoginPage()
 
-  await user.type(screen.getByLabelText("Correo electrónico"), "demo@persianas.com")
+  await user.type(screen.getByLabelText("Correo electrónico"), "usuario@empresa.com")
   await user.type(screen.getByLabelText("Contraseña"), "incorrecta")
   await user.click(screen.getByRole("button", { name: "Iniciar Sesión" }))
 
@@ -74,10 +65,10 @@ it("inicia el splash después de una autenticación exitosa", async () => {
   const onAuthenticated = vi.fn()
 
   render(<LoginPage onAuthenticated={onAuthenticated} />)
-  await user.type(screen.getByLabelText("Correo electrónico"), "demo@persianas.com")
-  await user.type(screen.getByLabelText("Contraseña"), "Demo1234")
+  await user.type(screen.getByLabelText("Correo electrónico"), "usuario@empresa.com")
+  await user.type(screen.getByLabelText("Contraseña"), "Pass1234")
   await user.click(screen.getByRole("button", { name: "Iniciar Sesión" }))
 
   await waitFor(() => expect(onAuthenticated).toHaveBeenCalledTimes(1))
-  expect(authMocks.login).toHaveBeenCalledWith("demo@persianas.com", "Demo1234")
+  expect(authMocks.login).toHaveBeenCalledWith("usuario@empresa.com", "Pass1234")
 })

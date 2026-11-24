@@ -1,84 +1,93 @@
 import { collection, doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { createSecondaryAuthUser } from "./secondaryAuthProvision"
 
 export const ROLES = Object.freeze({ MASTER: "master", EMPLEADO: "empleado" })
-export const DEFAULT_MASTER_EMAILS = Object.freeze(["admin@propulsa.com", "demo@persianas.com"])
 
-export function getInitialRoleForEmail(email) {
-  if (!email) return ROLES.EMPLEADO
-  return DEFAULT_MASTER_EMAILS.includes(email.trim().toLowerCase()) ? ROLES.MASTER : ROLES.EMPLEADO
+export function normalizeEmail(email) {
+  return typeof email === "string" ? email.trim().toLowerCase() : ""
+}
+
+function mapSnapshotDoc(snapshotDoc) {
+  const data = snapshotDoc.data()
+  return { ...data, id: snapshotDoc.id, uid: data.uid || snapshotDoc.id, blocked: Boolean(data.blocked) }
+}
+
+function notifyNullProfile(onProfile, onError, error) {
+  onProfile(null)
+  if (onError && error) onError(error)
 }
 
 export function subscribeToUserProfile(user, onProfile, onError) {
-  if (!user?.uid) {
+  const emailKey = normalizeEmail(user?.email)
+  if ((!user?.uid && !emailKey) || !db) {
     onProfile(null)
     return () => undefined
   }
-  if (!db) {
-    onProfile({ uid: user.uid, email: user.email || "", role: getInitialRoleForEmail(user.email) })
-    return () => undefined
-  }
+  let unsubFallback = () => undefined
+  const primaryId = user?.uid || emailKey
 
-  const userRef = doc(db, "usuarios", user.uid)
-  return onSnapshot(
-    userRef,
-    async (snapshot) => {
-      if (snapshot.exists()) {
-        onProfile(snapshot.data())
-        return
-      }
-      const profile = {
-        uid: user.uid,
-        email: user.email || "",
-        displayName: user.displayName || user.email?.split("@")[0] || "Usuario",
-        role: getInitialRoleForEmail(user.email),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      try {
-        await setDoc(userRef, profile)
-        onProfile(profile)
-      } catch (err) {
-        onProfile(profile)
-        if (onError) onError(err)
-      }
+  const unsubPrimary = onSnapshot(
+    doc(db, "usuarios", primaryId),
+    (snapshot) => {
+      unsubFallback()
+      if (snapshot.exists()) return onProfile(mapSnapshotDoc(snapshot))
+      if (!emailKey || emailKey === primaryId) return onProfile(null)
+      unsubFallback = onSnapshot(
+        doc(db, "usuarios", emailKey),
+        (s) => onProfile(s.exists() ? mapSnapshotDoc(s) : null),
+        (err) => notifyNullProfile(onProfile, onError, err),
+      )
     },
-    (error) => {
-      onProfile({ uid: user.uid, email: user.email || "", role: getInitialRoleForEmail(user.email) })
-      if (onError) onError(error)
-    },
+    (err) => notifyNullProfile(onProfile, onError, err),
   )
+
+  return () => { unsubPrimary(); unsubFallback() }
 }
 
 export function subscribeToAllUsers(onUsers, onError) {
   return onSnapshot(
     collection(db, "usuarios"),
-    (snapshot) => onUsers(snapshot.docs.map((d) => d.data())),
+    (snapshot) => onUsers(snapshot.docs.map(mapSnapshotDoc)),
     (error) => { if (onError) onError(error) },
   )
 }
 
-export async function updateUserRole(uid, newRole) {
-  if (!uid) throw new Error("Se requiere UID del usuario")
+export async function updateUserRole(userId, newRole) {
+  if (!userId) throw new Error("Se requiere UID del usuario")
   if (!Object.values(ROLES).includes(newRole)) throw new Error("Rol inválido")
-  await updateDoc(doc(db, "usuarios", uid), { role: newRole, updatedAt: new Date().toISOString() })
+  await updateDoc(doc(db, "usuarios", userId), { role: newRole, updatedAt: new Date().toISOString() })
 }
 
-export async function seedInitialAdminUsers() {
-  try {
-    const adminRef = doc(db, "usuarios", "admin-propulsa-preconfigured")
-    const docSnap = await getDoc(adminRef)
-    if (!docSnap.exists()) {
-      await setDoc(adminRef, {
-        uid: "admin-propulsa-preconfigured",
-        email: "admin@propulsa.com",
-        displayName: "Admin Propulsa",
-        role: ROLES.MASTER,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      })
-    }
-  } catch {
-    // Silencioso si falla inicialización preventiva
+export async function setUserBlockedStatus(userId, blocked) {
+  if (!userId) throw new Error("Se requiere identificador del usuario")
+  await updateDoc(doc(db, "usuarios", userId), { blocked: Boolean(blocked), updatedAt: new Date().toISOString() })
+}
+
+export async function authorizeUserEmail({ email, password, displayName = "", role = ROLES.EMPLEADO }) {
+  const normalized = normalizeEmail(email)
+  if (!normalized || !normalized.includes("@")) throw new Error("Se requiere un correo válido")
+  if (!Object.values(ROLES).includes(role)) throw new Error("Rol inválido")
+
+  const emailRef = doc(db, "usuarios", normalized)
+  const existingEmailSnap = await getDoc(emailRef)
+  if (existingEmailSnap.exists()) throw new Error("Ese correo ya se encuentra registrado en la base de datos")
+
+  const createdUid = await createSecondaryAuthUser(normalized, password)
+  const docId = createdUid || normalized
+  const userRef = doc(db, "usuarios", docId)
+
+  const now = new Date().toISOString()
+  const profile = {
+    id: docId,
+    uid: docId,
+    email: normalized,
+    displayName: displayName.trim() || normalized.split("@")[0],
+    role,
+    blocked: false,
+    createdAt: now,
+    updatedAt: now,
   }
+  await setDoc(userRef, profile)
+  return profile
 }

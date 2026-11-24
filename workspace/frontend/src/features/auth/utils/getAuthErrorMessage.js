@@ -5,6 +5,8 @@ const AUTH_ERROR_MESSAGES = {
   "auth/email-already-in-use": "Ese correo ya está registrado.",
   "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
   "auth/operation-not-allowed": "Activá el acceso con correo y contraseña en Firebase.",
+  "auth/user-disabled": "Tu cuenta está deshabilitada. Comunicate con Grupo Gonzalez para consultas.",
+  "auth/too-many-requests": "Demasiados intentos fallidos. Intentá nuevamente más tarde.",
 }
 
 export default function getAuthErrorMessage(error) {

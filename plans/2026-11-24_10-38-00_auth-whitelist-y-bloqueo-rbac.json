@@ -1,0 +1,65 @@
+{
+  "metadatos": {
+    "fecha_creacion": "2026-11-24 10:59:30",
+    "estado": "aprobado",
+    "motivo_rechazo": ""
+  },
+  "pasos": [
+    {
+      "id": 1,
+      "titulo": "Crear nueva rama de desarrollo para el blindaje de acceso",
+      "descripcion": "Crear y cambiar a la rama git `pablo/auth-whitelist-rbac` desde `main` para aislar todos los cambios de seguridad, control de acceso y reglas de Firestore.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/package.json"
+    },
+    {
+      "id": 2,
+      "titulo": "Refactorizar userService a validación de cuenta existente, bloqueo y sin Masters por defecto",
+      "descripcion": "En `userService.js`: 1) Eliminar `DEFAULT_MASTER_EMAILS`, `getInitialRoleForEmail` y `seedInitialAdminUsers`. 2) En `subscribeToUserProfile`, consultar el perfil existente del usuario en la colección `usuarios` (por `uid` o por email normalizado) y, si NO existe en la base de datos, NO auto-crearlo (devolver `null` para denegar el acceso). 3) Soportar el campo `blocked: true | false` además de `role: 'master' | 'empleado'`. 4) Añadir funciones `authorizeUserEmail(email, role, displayName)` y `setUserBlockedStatus(userId, blocked)` para que el Master gestione el padrón de usuarios en Firestore.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/src/features/auth/services/userService.js"
+    },
+    {
+      "id": 3,
+      "titulo": "Eliminar registro en AuthContext y validar cuenta existente y habilitada",
+      "descripcion": "En `AuthContext.jsx`: 1) Eliminar `createUserWithEmailAndPassword` / `register`, la llamada a `seedInitialAdminUsers` y el fallback a `getInitialRoleForEmail`. 2) Derivar `role` exclusivamente de `userProfile?.role`, y calcular `isBlocked = Boolean(userProfile?.blocked)` e `isAuthorized = Boolean(user && userProfile && !isBlocked && (role === ROLES.MASTER || role === ROLES.EMPLEADO))`. 3) Actualizar `getAuthErrorMessage.js` con mensajes claros para credenciales inválidas, usuarios deshabilitados (`auth/user-disabled`) y acceso no autorizado.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/src/shared/providers/AuthContext.jsx"
+    },
+    {
+      "id": 4,
+      "titulo": "Eliminar opción de crear cuenta en LoginPage y agregar leyenda de contacto con Grupo Gonzalez",
+      "descripcion": "En `useLoginForm.js` y `LoginPage.jsx`: 1) Eliminar por completo el estado `isRegistering`, la función `toggleMode` y el botón 'Crear una cuenta', dejando únicamente el flujo de 'Iniciar Sesión'. 2) Agregar en `LoginPage.jsx` un mensaje informativo debajo del formulario indicando que, si tienen algún problema para autenticarse, se comuniquen con Grupo Gonzalez para consultas. 3) En `App.jsx`, si un usuario logra autenticarse en Firebase Auth pero no tiene un perfil habilitado en `usuarios` (`!isAuthorized` o `isBlocked`), impedir el montaje de `AuthenticatedApp` mostrando una pantalla de Acceso Restringido / Cuenta Deshabilitada con la indicación de comunicarse con Grupo Gonzalez y un botón para Cerrar Sesión.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/src/features/auth/components/LoginPage.jsx"
+    },
+    {
+      "id": 5,
+      "titulo": "Ocultar pestaña Configuración de elementos a los usuarios Empleado",
+      "descripcion": "En `AuthenticatedApp.jsx`: Evaluar `isMaster` desde `useAuth()`. Si el usuario no es `master` (es decir, es `empleado`), renderizar únicamente la vista del `Cotizador Cliente` (`EstimatorPage`), ocultando el selector de pestaña `Configuración de elementos` y no montando `ConfigCrud`.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/src/shared/components/AuthenticatedApp.jsx"
+    },
+    {
+      "id": 6,
+      "titulo": "Actualizar panel de Usuarios DB para asignar roles, habilitar/bloquear cuentas y pre-autorizar correos",
+      "descripcion": "Manteniendo el límite de Clean Code (<100 líneas por archivo, <40 líneas por función): actualizar `UserRoleTable.jsx` (y subcomponentes modulares) para que un usuario Master pueda ver el estado (`Habilitado` / `Bloqueado`), cambiar el rol (`Master` <-> `Empleado`), `Bloquear` / `Desbloquear` cuentas (deshabilitado sobre sí mismo) y dar de alta correos autorizados en la base de datos.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/src/features/admin/components/UserRoleTable.jsx"
+    },
+    {
+      "id": 7,
+      "titulo": "Adaptar y blindar firestore.rules con validación de usuario habilitado y rol",
+      "descripcion": "Actualizar `workspace/frontend/firestore.rules` para validar en el servidor que: 1) Solo usuarios autenticados cuyo documento exista en `usuarios` (por `request.auth.uid` o `request.auth.token.email.lower()`), con `blocked != true` y rol `master` o `empleado`, puedan leer las colecciones del catálogo y operar en `budget_history`. 2) Solo usuarios activos con `role == 'master'` puedan crear/editar/eliminar elementos del catálogo y modificar o administrar documentos en la colección `usuarios`.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/firestore.rules"
+    },
+    {
+      "id": 8,
+      "titulo": "Actualizar y ampliar tests unitarios y de integración",
+      "descripcion": "Actualizar las suites de pruebas en `userService.test.js`, `AuthContext.test.jsx`, `LoginPage.test.jsx`, `getAuthErrorMessage.test.js` y `UserRoleTable.test.jsx` para reflejar la eliminación del registro público, el mensaje de Grupo Gonzalez, el bloqueo de usuarios y el ocultamiento de configuración para empleados, verificando que `npm test` y `npm run build` finalicen sin errores.",
+      "trabajador": "frontend",
+      "archivo_salida_esperado": "workspace/frontend/src/features/auth/components/__tests__/LoginPage.test.jsx"
+    }
+  ]
+}
